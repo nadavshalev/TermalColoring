@@ -1,14 +1,10 @@
 import pickle
 
+def save_v(filename1 ,object1):
+    filehandler = open(filename1, 'wb')
+    pickle.dump(object1, filehandler)
 
-def save_v(file_folder, file_object):
-    file_obj = open(file_folder, 'w+')
-    pickle.dump(file_object, file_obj)
-
-
-def save_v(file_folder):
-    file_obj = open(file_folder, 'r')
-    return pickle.load(file_obj)
-
-
-save_v('123', [1,2,3,4,5])
+def open_v(filename):
+    filehandler = open(filename, 'rb')
+    object = pickle.load(filehandler)
+    return object
