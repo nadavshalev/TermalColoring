@@ -18,10 +18,13 @@ import os
 import random
 import tensorflow as tf
 
+
+pathTrain = '../../data/colorIm/images/Train/'
+pathTest = '../../data/colorIm/images/Test/'
 # Get images
 X = []
-for filename in os.listdir('Train/'):
-    X.append(img_to_array(load_img('Train/'+filename)))
+for filename in os.listdir(pathTrain):
+    X.append(img_to_array(load_img(pathTrain+filename)))
 X = np.array(X, dtype=float)
 Xtrain = 1.0/255*X
 
@@ -98,11 +101,11 @@ def image_a_b_gen(batch_size):
 model.compile(optimizer='rmsprop', loss='mse')
 model.fit_generator(image_a_b_gen(batch_size), epochs=50, steps_per_epoch=1)
 
-model.fit_generator(image_a_b_gen(batch_size), epochs=1000, steps_per_epoch=50)
+model.fit_generator(image_a_b_gen(batch_size), epochs=2000, steps_per_epoch=50)
 
 color_me = []
-for filename in os.listdir('Test/'):
-    color_me.append(img_to_array(load_img('Test/'+filename)))
+for filename in os.listdir(pathTest):
+    color_me.append(img_to_array(load_img(pathTest+filename)))
 color_me = np.array(color_me, dtype=float)
 gray_me = gray2rgb(rgb2gray(1.0/255*color_me))
 color_me_embed = create_inception_embedding(gray_me)
