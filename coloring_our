@@ -33,30 +33,57 @@ def get_model():
     return md.Model(inputs=encoder_input, outputs=decoder_output)
 
 
+
+load_model = True
+val_split = 0.2
+batch_size = 50
+epochs = 3
+
 path_test = '../../data/colorIm/testdata/Validate/'
 path_train = '../../data/colorIm/images/Train/'
 path_res = './results/'
+filepath="./chechpoints/model-{epoch:02d}-{val_acc:.2f}.hdf5"
 
-data_train, data_val, data_test = load_data(path_test=path_test, path_train=path_train, val_size=0, train_num=100)
+# load images from folder
+#data_train, data_val, data_test = load_data(path_test=path_test, path_train=path_train, val_size=val_split, train_num=500)
 
+# load images from file
+data_train, data_val, data_test = load_from_file()
+
+# preproces data
 X_train, Y_train = get_data_labels(data_train)
-# X_val, Y_val = get_data_labels(data_val)
+X_val, Y_val = get_data_labels(data_val)
 
-model = get_model()
-model.compile(optimizer='adam', loss='mae')
+# get model and compile
+if load_model:
+    #model.load_weights("weights.best.hdf5")
+    model = keras.models.load_model('./chechpoints/model-03-0.56.hdf5')
+else:
+    model = get_model()
+    model.compile(optimizer='adam', loss='mae', metrics=['accuracy'])
 
-datagen = keras.preprocessing.image.ImageDataGenerator(
-        shear_range=0.2,
-        zoom_range=0.2,
-        rotation_range=20,
-        horizontal_flip=True)
-datagen.fit(X_train)
+    # set data aug
+    datagen = keras.preprocessing.image.ImageDataGenerator(
+            shear_range=0.2,
+            zoom_range=0.2,
+            rotation_range=20,
+            horizontal_flip=True)
+    datagen.fit(X_train)
 
-model.fit(x=X_train, y=Y_train, batch_size=50, epochs=2,
-          verbose=2, validation_split=0.1, steps_per_epoch=None, validation_steps=None, validation_freq=5)
+    # set checkpoints
+    checkpoint = keras.callbacks.ModelCheckpoint(filepath, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
+    callbacks_list = [checkpoint]
 
-output = model.predict(skimage.color.rgb2gray(1.0/255*data_test))
-output = output * 128
+    # train model
+    model.fit_generator(datagen.flow(X_train, Y_train, batch_size=batch_size),
+                        steps_per_epoch=len(X_train) / batch_size, epochs=epochs,
+                        validation_data=datagen.flow(X_val, Y_val, batch_size=batch_size),
+                        validation_steps=len(X_val) / batch_size, validation_freq=1,
+                        workers=4, use_multiprocessing=True, shuffle=True,
+                        initial_epoch=0, callbacks=callbacks_list)
 
-save_results(output, path_res)
+# predict and save to folder
+output = model.predict(data_test) * 128
+save_results(output, data_test, path_res)
 
+pass
