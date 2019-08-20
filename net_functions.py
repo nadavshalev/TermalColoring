@@ -2,9 +2,11 @@ import keras
 import os
 import numpy as np
 import skimage
+from save_func import *
+import time
 
 
-def load_data(path_test, path_train, val_size, train_num=-1):
+def load_data(path_test, path_train, val_size, train_num=-1, to_save=True, save_path='./imFile'):
     im_process = keras.preprocessing.image
 
     # load train set
@@ -34,9 +36,25 @@ def load_data(path_test, path_train, val_size, train_num=-1):
         test_set.append(im_process.img_to_array(im_process.load_img(path_test + im)))
 
     test_set = np.array(test_set, dtype=float)
+    test_set = skimage.color.rgb2lab(1.0/255*test_set)[:,:,:,0]
+    test_set = test_set.reshape(test_set.shape+(1,))
+    skimage.io.imsave
+    if to_save:
+        data = {
+            "train_set": train_set,
+            "validation_set": validation_set,
+            "test_set": test_set
+        }
+        save_v(save_path, data)
 
     return train_set,validation_set,test_set
 
+def load_from_file(save_path='./imFile'):
+    print('loading images...')
+    start_time = time.time()
+    data = open_v(save_path)
+    print('loaded (', time.time() - start_time, '[sec] )')
+    return data["train_set"],data["validation_set"],data["test_set"]
 
 def get_data_labels(data):
     lab_data = skimage.color.rgb2lab(data)
@@ -91,9 +109,9 @@ def train(x_train, y_train, model, datagen, batch_size, epochs, ev_time, x_val, 
     return model
 
 
-def save_results(results, dir_path):
+def save_results(results, inputs, dir_path):
     for i in range(len(results)):
         cur = np.zeros((256, 256, 3))
-        cur[:, :, 0] = results[i][:, :, 0]
+        cur[:, :, 0] = inputs[i][:, :, 0]
         cur[:, :, 1:] = results[i]
         skimage.io.imsave(dir_path + "im_" + str(i) + ".png", skimage.color.lab2rgb(cur))
