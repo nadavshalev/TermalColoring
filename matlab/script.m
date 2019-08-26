@@ -12,37 +12,37 @@ optimizer.MaximumIterations = 300;
 % optimizer.InitialRadius = 0.001;
 cost = sum(sum(abs(DG.*DT))) / (480*640)
 
-figure;
-RIG = imregister(IG,IT,'translation',optimizer,metric); 
-[RDG, ~] = imgradient(RIG,'prewitt');
-subplot(1,2,1); imshowpair(RDG,DT.^0.6); title('translation')
-subplot(1,2,2); imshowpair(RIG,IT); 
-costTranslation = sum(sum(abs(RDG.*DT))) / (480*640)
-drawnow;
+% figure;
+% RIG = imregister(IG,IT,'translation',optimizer,metric); 
+% [RDG, ~] = imgradient(RIG,'prewitt');
+% subplot(1,2,1); imshowpair(RDG,DT.^0.6); title('translation')
+% subplot(1,2,2); imshowpair(RIG,IT); 
+% costTranslation = sum(sum(abs(RDG.*DT))) / (480*640)
+% drawnow;
+% 
+% figure;
+% RIG = imregister(IG,IT,'rigid',optimizer,metric); 
+% [RDG, ~] = imgradient(RIG,'prewitt');
+% subplot(1,2,1); imshowpair(RDG,DT.^0.6);  title('rigid')
+% subplot(1,2,2); imshowpair(RIG,IT); 
+% costRigid = sum(sum(abs(RDG.*DT))) / (480*640)
+% drawnow;
 
 figure;
-RIG = imregister(IG,IT,'rigid',optimizer,metric); 
-[RDG, ~] = imgradient(RIG,'prewitt');
-subplot(1,2,1); imshowpair(RDG,DT.^0.6);  title('rigid')
-subplot(1,2,2); imshowpair(RIG,IT); 
-costRigid = sum(sum(abs(RDG.*DT))) / (480*640)
-drawnow;
-
-figure;
-RIG = imregister(IG,IT,'similarity',optimizer,metric);
+[RIG,tform] = imregister2(IG,IT,'similarity',optimizer,metric);
 [RDG, ~] = imgradient(RIG,'prewitt');
 subplot(1,2,1); imshowpair(RDG,DT.^0.6);  title('similarity')
 subplot(1,2,2); imshowpair(RIG,IT); 
 costSimilarity = sum(sum(abs(RDG.*DT))) / (480*640)
 drawnow;
 
-figure;
-RIG = imregister(IG,IT,'affine',optimizer,metric); 
-[RDG, ~] = imgradient(RIG,'prewitt');
-subplot(1,2,1); imshowpair(RDG,DT.^0.6);  title('affine')
-subplot(1,2,2); imshowpair(RIG,IT); 
-costAffine = sum(sum(abs(RDG.*DT))) / (480*640)
-drawnow;
+% figure;
+% RIG = imregister(IG,IT,'affine',optimizer,metric); 
+% [RDG, ~] = imgradient(RIG,'prewitt');
+% subplot(1,2,1); imshowpair(RDG,DT.^0.6);  title('affine')
+% subplot(1,2,2); imshowpair(RIG,IT); 
+% costAffine = sum(sum(abs(RDG.*DT))) / (480*640)
+% drawnow;
 
 %%
 [RDGC, move] = xcorCalibration(DT,DG, true);
