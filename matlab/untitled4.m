@@ -1,8 +1,11 @@
+I1 = normTherm;%(1:100,end-100:end);
+I2 = normGray2;%(1:100,end-100:end);
 
-cp = cpselect(normGray2,normTherm);
-movingPointsAdjusted = cpcorr(movingPoints,fixedPoints,normGray2,normTherm);
+
+cp = cpselect(I2,I1);
+movingPointsAdjusted = cpcorr(movingPoints,fixedPoints,normGray,normTherm);
 tform = fitgeotrans(movingPointsAdjusted,fixedPoints,'pwl');
-normGray3 = imwarp(normGray2,tform);
+normGray3 = imwarp(normGray,tform);
 
 [gmag3, gdir3] = imgradient(normGray3,'prewitt');
 

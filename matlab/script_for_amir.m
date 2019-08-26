@@ -1,12 +1,12 @@
 
-fileName = '20082019_150333';
-folder = '../data/camTest/';
+fileName = '20082019_150305';
+folder = '../../../data/FLIR/training/RGB/';
 thermal_name = 'RCKD_Cats_';
 thermal_ext = '.txt';
 color_name = 'img_Cats_';
 color_ext = '.png';
 
-raw_text_from_file = fileread([folder thermal_name fileName thermal_ext]);
+raw_text_from_file = fileread('../../../data/FLIR/training/RGB/FLIR_00011.jpg');
 
 %striping the file from unneeded signs
 edited_filetext = strrep(raw_text_from_file,'[','');
@@ -23,15 +23,19 @@ thermalIm = transpose(reshape(Output_1d_array, 480, 640));
 figure;imshow(thermalIm,[]); impixelinfo;
 
 % figure;
-rgbIm = imread([folder color_name fileName color_ext]);
-figure;imshow(rgbIm,[]); 
+rgbIm = imread('../../../data/FLIR/training/RGB/FLIR_00011.jpg');
 
 tmin = min(min(thermalIm));
 tmax = max(max(thermalIm));
 normTherm = (thermalIm - tmin) / (tmax-tmin);
+MedianFiltered = medfilt2(normTherm,[10 10]);
+figure;imshow(MedianFiltered,[]); impixelinfo;
 
 normRgb = imresize(rgbIm,1/2.25);
 normGray = rgb2gray(normRgb);
+
+figure;imshow(normGray,[]); 
+
 figure;imshowpair(normRgb,normTherm,'falsecolor')
 
 [tmag, tdir] = imgradient(normTherm,'prewitt');
@@ -39,6 +43,4 @@ figure;imshowpair(normRgb,normTherm,'falsecolor')
 [gmag, gdir] = imgradient(normGray,'prewitt');
 % figure;imshow(gmag,[]);
 figure;imshowpair(tmag,gmag,'falsecolor')
-% c = normxcorr2(tmag,gmag);
-% figure, surf(c), shading flat
 
