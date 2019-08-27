@@ -1,4 +1,4 @@
-function [RIG,tform, value, values, methond] = thRegister(IT,IG, toPlot)
+function [RIG,tform, value, values, methond] = thRegister(IT, IG, toPlot)
 if nargin < 3
     toPlot = false;
 end

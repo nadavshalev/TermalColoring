@@ -1,10 +1,27 @@
 close all;
-[IT,IG] = loadImage();
+[IT,IG, IC] = loadImage();
 showImage(IT,IG);
 %%
 [DT, ~] = imgradient(IT,'prewitt');
 [DG, ~] = imgradient(IG,'prewitt');
 showImage(DT.^0.8,DG.^0.8);
+%%
+[RIG,tform, value, values, methond] = thRegister(IT,IG, true);
+%%
+Rfixed = imref2d(size(IT));
+Rmoving = imref2d(size(IG));
+RIC = imwarp(IC,Rmoving,tform,'OutputView',Rfixed, 'SmoothEdges', true);
+
+showImage(RIC,IT);
+
+
+%% 
+RIG2 = imwarp(IG,tform);
+% [RIG3, move] = xcorCalibration(RIG, RIG2(1:640,1:480), true);
+showImage(RIG2,RIG);
+
+
+
 
 %%
 [optimizer,metric] = imregconfig('Multimodal');

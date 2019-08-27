@@ -1,4 +1,4 @@
-function [movingReg,tform] = imregister2(varargin)
+function [movingReg,tform, Rreg] = imregister2(varargin)
 %IMREGISTER Register two 2-D or 3-D images using intensity metric optimization.
 %
 %   MOVING_REG = IMREGISTER(MOVING, FIXED, TRANSFORMTYPE, OPTIMIZER,
