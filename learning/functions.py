@@ -59,7 +59,7 @@ from keras.utils.vis_utils import plot_model
 # In[2]:
 
 
-def get_data(path, to_lab = False):
+def get_data(path, im_height, im_width, to_lab = False):
     ids_x = next(os.walk(path + "TRM"))[2]
     ids_x.sort()
     ids_y = next(os.walk(path + "RGB"))[2]
@@ -92,7 +92,7 @@ def get_data(path, to_lab = False):
 
 def ssim_tf(ssim_fact=1):
     def ssim_loss(y_true, y_pred):
-        return K.abs(ssim_fact * (1-tf.image.ssim(y_true, y_pred, 1)) + (1-ssim_fact) * mean_absolute_error(y_true, y_pred))
+        return K.abs(ssim_fact * (1-tf.image.ssim_multiscale(y_true, y_pred, 1)) + (1-ssim_fact) * mean_absolute_error(y_true, y_pred))
     return ssim_loss
 
 
@@ -234,7 +234,7 @@ def define_gan(g_model, d_model, image_shape, ssim_fact=0.5, loss_weights=[1,100
     ssimTF = ssim_tf(ssim_fact=0.5)
     # compile model
     opt = Adam(lr=0.0002, beta_1=0.5)
-    model.compile(loss=['binary_crossentropy', ssimTF], optimizer=opt, loss_weights=loss_weights)
+    model.compile(loss=['binary_crossentropy', 'mae'], optimizer=opt, loss_weights=loss_weights)
     return model
 
 
@@ -242,10 +242,10 @@ def define_gan(g_model, d_model, image_shape, ssim_fact=0.5, loss_weights=[1,100
 
 
 def generate_real_samples(train_crops, n_samples, patch_shape):
-    # choose random instances
-    ix = np.random.randint(0, X.shape[0], size=n_samples)
     # retrieve selected images
     x, y = next(train_crops)
+    ix = np.random.randint(0, x.shape[0], size=n_samples)
+    
     if len(x.shape) != 4:
         x = np.expand_dims(x, axis=0)
         y = np.expand_dims(y, axis=0)
