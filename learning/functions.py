@@ -313,22 +313,7 @@ def plot_sample(train_crops, g_model, to_lab=False):
         ax[1].set_title('Pred')
     return xi
 
-def plot_loss(vec):
-    fig, ax = plt.subplots(2, 3, figsize=(20, 10))
-    ax[0,1].imshow(vec([0])
-    ax[0,1].set_title('d_real')
-                   
-    ax[0,2].imshow(vec([1])
-    ax[0,2].set_title('d_fake')
-                   
-    ax[0,3].imshow(vec([2])
-    ax[0,3].set_title('g_total')
 
-    ax[1,0].imshow(vec([3])
-    ax[1,0].set_title('g_cross')
-
-    ax[1,1].imshow(vec([4])
-    ax[1,1].set_title('g_loss')   
 
 
 
