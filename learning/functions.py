@@ -52,7 +52,7 @@ from keras.layers import Dropout
 from keras.layers import BatchNormalization
 from keras.layers import LeakyReLU
 from keras.utils.vis_utils import plot_model
-
+import pickle
 
 # # Load Images
 
@@ -88,12 +88,6 @@ def get_data(path, im_height, im_width, to_lab = False):
 # # Loss Func
 
 # In[3]:
-
-
-def ssim_tf(ssim_fact=1):
-    def ssim_loss(y_true, y_pred):
-        return K.abs(ssim_fact * (1-tf.image.ssim_multiscale(y_true, y_pred, 1)) + (1-ssim_fact) * mean_absolute_error(y_true, y_pred))
-    return ssim_loss
 
 
 # # Discriminator
@@ -218,25 +212,6 @@ def define_generator(image_shape=(256,256,1)):
 # In[7]:
 
 
-# define the combined generator and discriminator model, for updating the generator
-def define_gan(g_model, d_model, image_shape, ssim_fact=0.5, loss_weights=[1,100]):
-    # make weights in the discriminator not trainable
-    d_model.trainable = False
-    # define the source image
-    in_src = Input(shape=image_shape)
-    # connect the source image to the generator input
-    gen_out = g_model(in_src)
-    # connect the source input and generator output to the discriminator input
-    dis_out = d_model([in_src, gen_out])
-    # src image as input, generated image and classification output
-    model = Model(in_src, [dis_out, gen_out])
-    # ssim loss
-    ssimTF = ssim_tf(ssim_fact=0.5)
-    # compile model
-    opt = Adam(lr=0.0002, beta_1=0.5)
-    model.compile(loss=['binary_crossentropy', 'mae'], optimizer=opt, loss_weights=loss_weights)
-    return model
-
 
 # In[8]:
 
@@ -293,6 +268,15 @@ def crop_generator(batches, crop_length, rand_crop=True):
 
 # In[10]:
 
+def save(data, filename):
+    outfile = open(filename,'wb')
+    pickle.dump(data,outfile)
+    outfile.close()
+def load(filename):
+    infile = open(filename,'rb')
+    new_dict = pickle.load(infile)
+    infile.close()
+    return new_dict
 
 def plot_sample(train_crops, g_model, to_lab=False):
     x, y = next(train_crops)
@@ -315,7 +299,39 @@ def plot_sample(train_crops, g_model, to_lab=False):
 
 
 
+def plot_loss(vec):
+    fig, ax = plt.subplots(2, 3, figsize=(20, 10))
+    ax[0,0].plot(vec[0])
+    ax[0,0].set_title('d_real')
 
+    ax[0,1].plot(vec[1])
+    ax[0,1].set_title('d_fake')
+
+    ax[0,2].plot(vec[2])
+    ax[0,2].set_title('g_total')
+
+    ax[1,0].plot(vec[3])
+    ax[1,0].set_title('g_cross')
+
+    ax[1,1].plot(vec[4])
+    ax[1,1].set_title('g_loss')  
+
+def plot_compare(g_names, dir_name, g_model, train_crops):
+    x, y = next(train_crops)
+    for i in range(len(g_names)):
+        g_model.load_weights(dir_name+'/g_model_' + g_names[i] + '.h5')
+        xi = g_model.predict(x)
+        
+        fig, ax = plt.subplots(1, 3, figsize=(20, 10))
+        yim = y
+        ax[0].imshow(x[0].squeeze())
+        ax[0].set_title(g_names[i])
+
+        ax[2].imshow(yim[0])
+        ax[2].set_title('Color')
+
+        ax[1].imshow(xi[0])
+        ax[1].set_title('Pred')
 
 # In[15]:
 
