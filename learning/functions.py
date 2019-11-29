@@ -38,6 +38,8 @@ from keras.optimizers import Adam
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
 from keras.losses import mean_absolute_error
 import keras.backend as K
+from keras.applications.vgg19 import VGG19
+from keras.models import Model
 
 from keras.optimizers import Adam
 from keras.initializers import RandomNormal
@@ -88,7 +90,33 @@ def get_data(path, im_height, im_width, to_lab = False):
 # # Loss Func
 
 # In[3]:
+def vgg_loss_inner(y_true, y_pred):
+    vgg19 = VGG19(include_top=False, weights='imagenet', input_shape=(256,256,3))
+    vgg19.trainable = False
+    for l in vgg19.layers:
+        l.trainable = False
+    model = Model(inputs=vgg19.input, outputs=vgg19.get_layer('block5_conv4').output)
+    model.trainable = False
+    
+    return 10*K.mean(K.square(model(y_true) - model(y_pred)))
 
+def vgg_obj(vgg_fact=1):
+    def vgg_loss(y_true, y_pred):
+        return K.abs(vgg_fact * vgg_loss_inner(y_true, y_pred) + (1-vgg_fact) * mean_absolute_error(y_true, y_pred))
+    return vgg_loss
+
+def ssim_metric(y_true, y_pred):
+    batch_size = y_true.shape[0];
+    ssim_sum = 0
+    for i in range(batch_size):
+        ssim_sum += tf.image.ssim_multiscale(y_true,y_pred,1)
+    return ssim_sum/batch_size;
+
+
+def ssim_tf(ssim_fact=1):
+    def ssim_loss(y_true, y_pred):
+        return K.abs(ssim_fact * (1-tf.image.ssim_multiscale(y_true,y_pred,1)) + (1-ssim_fact) * mean_absolute_error(y_true, y_pred))
+    return ssim_loss
 
 # # Discriminator
 
@@ -210,7 +238,25 @@ def define_generator(image_shape=(256,256,1)):
 # # GAN model
 
 # In[7]:
-
+# define the combined generator and discriminator model, for updating the generator
+def define_gan(g_model, d_model, image_shape, loss_fact=0.5, loss_weights=[1,100]):
+    # make weights in the discriminator not trainable
+    d_model.trainable = False
+    # define the source image
+    in_src = Input(shape=image_shape)
+    # connect the source image to the generator input
+    gen_out = g_model(in_src)
+    # connect the source input and generator output to the discriminator input
+    dis_out = d_model([in_src, gen_out])
+    # src image as input, generated image and classification output
+    model = Model(in_src, [dis_out, gen_out])
+    # ssim loss
+#     ssimTF = ssim_tf(ssim_fact=loss_fact)
+    vggloss = vgg_obj(vgg_fact=loss_fact);
+    # compile model
+    opt = Adam(lr=0.0002, beta_1=0.5)
+    model.compile(loss=['binary_crossentropy', vggloss], optimizer=opt, loss_weights=loss_weights)
+    return model
 
 
 # In[8]:
