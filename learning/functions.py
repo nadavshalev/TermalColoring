@@ -281,7 +281,66 @@ def generate_fake_samples(g_model, samples, patch_shape):
 	return X, z
 
 
+# train pix2pix models
+def train(d_model, g_model, gan_model, train_crops, n_steps, n_batch, weight_name, dir_name=None):
+    if dir_name is None:
+        dir_name = weight_name
+    # number of iter to save state
+    save_num = 200
+    # size of descriminator return - 16x16
+    n_patch=16
+    if not os.path.exists(dir_name):
+        os.mkdir(dir_name)
+    # init tmp vars
+    g_loss_min = 100;
+    d1 = []; d2 = []; g1 = []; g2 = []; g3 = [];
+    ds1 = 0; ds2 = 0; gs1 = 0; gs2 = 0; gs3 = 0;
+    
+    # manually enumerate epochs
+    for i in range(n_steps):
+        start_time = time.time()
+        # select a batch of real samples
+        [X_realA, X_realB], y_real = generate_real_samples(train_crops, n_batch, n_patch)
+        # generate a batch of fake samples
+        X_fakeB, y_fake = generate_fake_samples(g_model, X_realA, n_patch)
+        # update discriminator for real samples
+        d_loss1 = d_model.train_on_batch([X_realA, X_realB], y_real)
+        # update discriminator for generated samples
+        d_loss2 = d_model.train_on_batch([X_realA, X_fakeB], y_fake)
+        # update the generator
+        g_total, g_cross, g_loss = gan_model.train_on_batch(X_realA, [y_real, X_realB])
+        # save tmp learning losses
+        ds1 += d_loss1; ds2 += d_loss2; gs1 += g_total; gs2 += g_cross; gs3 += g_loss;
+        print('%d, d_real[%.3f] d_fake[%.3f] g_total[%.3f] g_cross[%.3f] g_loss[%.3f] %.3f[sec]' % (i, d_loss1, d_loss2, g_total, g_cross, g_loss, time.time()-start_time))
+        
+        # save best params
+        if i % 10 == 0:
+            d1.append(ds1/10);d2.append(ds2/10);g1.append(gs1/10);g2.append(gs2/10);g3.append(gs3/10);
+            ds1 = 0; ds2 = 0; gs1 = 0; gs2 = 0; gs3 = 0;
+            if g_loss < g_loss_min:
+                g_model.save_weights(dir_name+'/g_model_best_loss_' + weight_name + '.h5')
+                g_loss_min = g_loss
+                print('best loss model saved!')
+        # save elaps params        
+        if i % save_num == 0:
+            g_model.save_weights(dir_name+'/g_model_' + weight_name + '.h5')
+            d_model.save_weights(dir_name+'/d_model_' + weight_name + '.h5')
+            print('model saved...')
+    
+    g_model.save_weights(dir_name+'/g_model_' + weight_name + '.h5')
+    d_model.save_weights(dir_name+'/d_model_' + weight_name + '.h5')
+    return d1, d2, g1, g2, g3
+
 # In[9]:
+
+def create_augment(x, y, dict_augments, batch_size=1, shuffle=True, rand_crop=True, seed=1234):
+    crop_size=256
+    image_datagen = ImageDataGenerator(**dict_augments)        
+    yimage_generator = image_datagen.flow(y, seed=seed, batch_size=batch_size, shuffle=shuffle)
+    Ximage_generator = image_datagen.flow(x, seed=seed, batch_size=batch_size, shuffle=shuffle)
+    generator = zip(Ximage_generator, yimage_generator)
+    aug_crops = crop_generator(generator, crop_size, rand_crop=rand_crop)
+    return aug_crops
 
 
 def random_crop(it,ic, random_crop_size, rand_crop=True):
